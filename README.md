@@ -1,70 +1,61 @@
-# GST Invoice Generator (Industry Grade, India)
+# GST Invoice Generator (India)
 
-Production-ready GST invoice system for Indian shopkeepers with FastAPI + React + SQLite, designed for deployment and MuleRun packaging.
+Production-oriented GST Invoice Generator for Indian shopkeepers.
 
-## Highlights
-- JWT auth preserved (`/auth/register`, `/auth/login`)
-- Strict GSTIN validation (regex + PAN segment + state-code match)
-- HSN master + item-level HSN validation (4–8 digits)
-- Hardened GST rules engine:
-  - Intra-state → CGST/SGST
-  - Inter-state → IGST
-  - Export → zero-rated
-  - Reverse charge indicator
-  - Composition dealer (no tax charged)
-- Deterministic rounding (line-level round then invoice recompute)
-- Invoice locking (`DRAFT` → `FINAL`, immutable after finalization)
-- Idempotent create (`Idempotency-Key` header)
-- Rate limiting:
-  - login: 10/min
-  - invoice create: 30/min
-- Structured JSON logs (`user_id`, `invoice_id`, `action`, `latency_ms`)
-- Export outputs:
-  - PDF with proper GST layout + QR (invoice id)
-  - GST-filing JSON schema
-  - A4 print HTML
-- MuleRun compatibility:
-  - `/health`
-  - `/metrics`
-  - env-driven config
-  - stateless service behavior
-
-## Tech Stack
-- **Backend**: FastAPI, SQLAlchemy, Alembic, SQLite, reportlab
-- **Frontend**: React, Tailwind, Vite
+## Stack
+- **Backend**: FastAPI + SQLAlchemy + Alembic + SQLite
+- **Frontend**: React + Tailwind + Vite
+- **PDF**: reportlab
 - **Auth**: JWT
 
-## Repo Structure
+## Features
+- JWT login/register
+- Create and update draft invoices (B2B/B2C)
+- Auto invoice number increment (`INV-YYYY-00001`)
+- GSTIN format + state code validation
+- Intra/inter state detection and CGST/SGST/IGST split
+- Reverse charge support
+- GST-compliant rounding (half-up, 2 decimals)
+- Grand total in words
+- Finalize and lock invoice
+- Export invoice as JSON, PDF and print-friendly HTML
+- OpenAPI docs available at `/docs`
+- Logging middleware with latency metrics
+- Unit tests for deterministic tax engine
+
+## Repository structure
+
 ```text
 backend/
   app/
-    api/
-    core/
-    db/
-    middleware/
-    models/
-    schemas/
-    services/
-    utils/
-  alembic/
-  tests/
+    api/            # Route handlers
+    core/           # Config/security
+    db/             # SQLAlchemy engine/session
+    middleware/     # Logging middleware
+    models/         # Normalized database models
+    schemas/        # Pydantic schemas
+    services/       # Tax and PDF logic
+    utils/          # GST validation and number-to-words
+  alembic/          # Migration environment and revisions
+  tests/            # Unit tests
 frontend/
   src/
+    components/
+    pages/
+    services/
 ```
 
-## Environment Variables (required)
-Create `backend/.env`:
-```env
-JWT_SECRET_KEY=replace-with-strong-secret
-DATABASE_URL=sqlite:///./gst_invoice.db
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-JWT_ALGORITHM=HS256
-LOG_LEVEL=INFO
-APP_NAME=GST Invoice Generator
-API_V1_PREFIX=/api/v1
-```
+## Data model
+Normalized schema:
+- `users`
+- `sellers`
+- `buyers`
+- `invoices`
+- `invoice_items`
+- `tax_summary`
 
-## Backend Run
+## Backend setup
+
 ```bash
 cd backend
 python -m venv .venv
@@ -74,53 +65,37 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-## Frontend Run
+Backend URL: `http://localhost:8000`
+- Swagger docs: `http://localhost:8000/docs`
+- OpenAPI JSON: `http://localhost:8000/api/v1/openapi.json`
+
+## Frontend setup
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## Important Endpoints
+Frontend URL: `http://localhost:5173`
+
+## Main API endpoints
 - `POST /api/v1/auth/register`
 - `POST /api/v1/auth/login`
-- `GET /health`
-- `GET /metrics`
-- `GET /api/v1/hsn`
-- `POST /api/v1/invoices` (supports `Idempotency-Key`)
-- `PUT /api/v1/invoices/{invoice_id}` (blocked after `FINAL`)
+- `POST /api/v1/sellers`
+- `GET /api/v1/sellers`
+- `POST /api/v1/buyers`
+- `GET /api/v1/buyers`
+- `POST /api/v1/invoices`
+- `PUT /api/v1/invoices/{invoice_id}`
 - `POST /api/v1/invoices/{invoice_id}/finalize`
-- `GET /api/v1/invoices/{invoice_id}/pdf`
 - `GET /api/v1/invoices/{invoice_id}/json`
+- `GET /api/v1/invoices/{invoice_id}/pdf`
 - `GET /api/v1/invoices/{invoice_id}/print`
 
 ## Testing
+
 ```bash
 cd backend
 PYTHONPATH=. pytest -q
 ```
-
-## Coverage
-To verify service coverage target:
-```bash
-cd backend
-PYTHONPATH=. pytest --cov=app.services --cov-report=term-missing
-```
-
-
-## UI/UX Enhancements (Shopkeeper-Optimized)
-- Reusable invoice builder components (`components/invoice/*`)
-- Form state hooks (`hooks/useInvoiceForm`, `hooks/useInvoiceValidation`, `hooks/useDebouncedValue`)
-- Offline-safe autosave draft in localStorage
-- Debounced live tax calculation preview + GST split panel
-- Instant add/remove line items with keyboard shortcut (`Ctrl/Cmd + N`)
-- Inline validation highlights for line item errors
-- High contrast mode toggle for accessibility
-- Screen-reader labels on key form fields
-
-## PDF Template Enhancements
-- Professional layout with optional company logo
-- QR code for invoice ID
-- Terms & conditions section
-- Signature block with configurable signatory
-- Print-optimized A4 export

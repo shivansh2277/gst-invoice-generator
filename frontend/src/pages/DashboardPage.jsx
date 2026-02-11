@@ -12,14 +12,13 @@ export default function DashboardPage() {
     <div>
       <h2 className="text-2xl font-semibold mb-4">Invoices</h2>
       <div className="bg-white rounded shadow overflow-hidden">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left">
           <thead className="bg-slate-200">
             <tr>
               <th className="p-3">Number</th>
               <th>Status</th>
               <th>Total</th>
-              <th>Tax Mode</th>
-              <th>Exports</th>
+              <th>Type</th>
             </tr>
           </thead>
           <tbody>
@@ -28,12 +27,7 @@ export default function DashboardPage() {
                 <td className="p-3">{invoice.invoice_number}</td>
                 <td>{invoice.status}</td>
                 <td>₹{invoice.grand_total.toFixed(2)}</td>
-                <td>{invoice.supply_type}</td>
-                <td className="space-x-2">
-                  <a className="text-blue-700 underline" href={`http://localhost:8000/api/v1/invoices/${invoice.id}/pdf`} target="_blank">PDF</a>
-                  <a className="text-blue-700 underline" href={`http://localhost:8000/api/v1/invoices/${invoice.id}/json`} target="_blank">JSON</a>
-                  <a className="text-blue-700 underline" href={`http://localhost:8000/api/v1/invoices/${invoice.id}/print`} target="_blank">Print</a>
-                </td>
+                <td>{invoice.invoice_type}</td>
               </tr>
             ))}
           </tbody>
