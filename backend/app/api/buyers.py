@@ -19,15 +19,12 @@ def create_buyer(
     _: User = Depends(get_current_user),
 ) -> Buyer:
     """Create buyer profile."""
-    data = payload.model_dump()
-    data["state_code"] = data["state_code"].upper()
-    if data.get("gstin"):
-        data["gstin"] = data["gstin"].upper()
-        if not is_valid_gstin(data["gstin"]):
+    if payload.gstin:
+        if not is_valid_gstin(payload.gstin):
             raise HTTPException(status_code=400, detail="Invalid GSTIN format")
-        if state_code_from_gstin(data["gstin"]) != data["state_code"]:
+        if state_code_from_gstin(payload.gstin) != payload.state_code:
             raise HTTPException(status_code=400, detail="GSTIN state code mismatch")
-    buyer = Buyer(**data)
+    buyer = Buyer(**payload.model_dump())
     db.add(buyer)
     db.commit()
     db.refresh(buyer)

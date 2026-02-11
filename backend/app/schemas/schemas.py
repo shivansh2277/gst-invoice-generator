@@ -33,7 +33,6 @@ class SellerBase(BaseModel):
     gstin: str = Field(min_length=15, max_length=15)
     address: str
     state_code: str = Field(min_length=2, max_length=2)
-    composition_flag: bool = False
 
 
 class SellerCreate(SellerBase):
@@ -65,34 +64,18 @@ class BuyerRead(BuyerBase):
         from_attributes = True
 
 
-class HsnMasterRead(BaseModel):
-    code: str
-    description: str
-    default_gst_rate: float
-
-    class Config:
-        from_attributes = True
-
-
 class InvoiceItemCreate(BaseModel):
     name: str
-    hsn_code: str = Field(min_length=4, max_length=8)
+    hsn_sac: str
     quantity: float = Field(gt=0)
     unit_price: float = Field(ge=0)
     discount: float = Field(default=0, ge=0)
-    gst_rate: Optional[float] = None
-
-    @field_validator("hsn_code")
-    @classmethod
-    def validate_hsn(cls, value: str) -> str:
-        if not value.isdigit() or not (4 <= len(value) <= 8):
-            raise ValueError("HSN/SAC must be 4-8 digits")
-        return value
+    gst_rate: float
 
     @field_validator("gst_rate")
     @classmethod
-    def validate_rate(cls, value: Optional[float]) -> Optional[float]:
-        if value is not None and value not in ALLOWED_GST_RATES:
+    def validate_rate(cls, value: float) -> float:
+        if value not in ALLOWED_GST_RATES:
             raise ValueError("GST rate must be one of 0, 5, 12, 18, 28, 40")
         return value
 
@@ -100,7 +83,7 @@ class InvoiceItemCreate(BaseModel):
 class InvoiceItemRead(BaseModel):
     id: int
     name: str
-    hsn_code: str
+    hsn_sac: str
     quantity: float
     unit_price: float
     discount: float
@@ -118,8 +101,6 @@ class InvoiceCreate(BaseModel):
     buyer_id: int
     invoice_type: str = Field(pattern="^(B2B|B2C)$")
     reverse_charge: bool = False
-    export_flag: bool = False
-    composition_flag: bool = False
     items: list[InvoiceItemCreate]
 
 
@@ -138,9 +119,6 @@ class InvoiceRead(BaseModel):
     invoice_number: str
     invoice_type: str
     reverse_charge: bool
-    export_flag: bool
-    composition_flag: bool
-    tax_shifted_to_recipient: bool
     supply_type: str
     status: str
     total_taxable: float

@@ -1,7 +1,6 @@
 """Seller endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -20,19 +19,13 @@ def create_seller(
     current_user: User = Depends(get_current_user),
 ) -> Seller:
     """Create seller profile."""
-    gstin = payload.gstin.upper()
-    state_code = payload.state_code.upper()
-    if not is_valid_gstin(gstin):
+    if not is_valid_gstin(payload.gstin):
         raise HTTPException(status_code=400, detail="Invalid GSTIN format")
-    if state_code_from_gstin(gstin) != state_code:
+    if state_code_from_gstin(payload.gstin) != payload.state_code:
         raise HTTPException(status_code=400, detail="GSTIN state code mismatch")
-    seller = Seller(**payload.model_dump(), gstin=gstin, state_code=state_code, user_id=current_user.id)
+    seller = Seller(**payload.model_dump(), user_id=current_user.id)
     db.add(seller)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Seller GSTIN already exists") from exc
+    db.commit()
     db.refresh(seller)
     return seller
 

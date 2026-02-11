@@ -2,18 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import (
-    Boolean,
-    CheckConstraint,
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    UniqueConstraint,
-)
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -40,7 +29,6 @@ class Seller(Base):
     gstin = Column(String(15), unique=True, nullable=False)
     address = Column(Text, nullable=False)
     state_code = Column(String(2), nullable=False)
-    composition_flag = Column(Boolean, default=False, nullable=False)
 
     owner = relationship("User", back_populates="sellers")
     invoices = relationship("Invoice", back_populates="seller")
@@ -58,40 +46,8 @@ class Buyer(Base):
     invoices = relationship("Invoice", back_populates="buyer")
 
 
-class HsnMaster(Base):
-    __tablename__ = "hsn_master"
-
-    code = Column(String(8), primary_key=True)
-    description = Column(String(255), nullable=False)
-    default_gst_rate = Column(Float, nullable=False)
-
-
-class InvoiceSequence(Base):
-    __tablename__ = "invoice_sequences"
-    __table_args__ = (UniqueConstraint("financial_year", "state_code", name="uq_invoice_sequence_fy_state"),)
-
-    id = Column(Integer, primary_key=True, index=True)
-    financial_year = Column(String(7), nullable=False)
-    state_code = Column(String(2), nullable=False)
-    current_value = Column(Integer, default=0, nullable=False)
-
-
-class IdempotencyKey(Base):
-    __tablename__ = "idempotency_keys"
-
-    key = Column(String(128), primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    request_hash = Column(String(64), nullable=False)
-    invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-
 class Invoice(Base):
     __tablename__ = "invoices"
-    __table_args__ = (
-        CheckConstraint("status IN ('DRAFT', 'FINAL')", name="ck_invoice_status"),
-        CheckConstraint("supply_type IN ('intra', 'inter', 'export')", name="ck_supply_type"),
-    )
 
     id = Column(Integer, primary_key=True, index=True)
     seller_id = Column(Integer, ForeignKey("sellers.id"), nullable=False)
@@ -99,11 +55,8 @@ class Invoice(Base):
     invoice_number = Column(String(50), unique=True, nullable=False)
     invoice_type = Column(String(3), nullable=False)
     reverse_charge = Column(Boolean, default=False, nullable=False)
-    export_flag = Column(Boolean, default=False, nullable=False)
-    composition_flag = Column(Boolean, default=False, nullable=False)
-    tax_shifted_to_recipient = Column(Boolean, default=False, nullable=False)
     supply_type = Column(String(10), nullable=False)
-    status = Column(String(20), default="DRAFT", nullable=False)
+    status = Column(String(20), default="draft", nullable=False)
     total_taxable = Column(Float, default=0.0, nullable=False)
     total_cgst = Column(Float, default=0.0, nullable=False)
     total_sgst = Column(Float, default=0.0, nullable=False)
@@ -124,7 +77,7 @@ class InvoiceItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     invoice_id = Column(Integer, ForeignKey("invoices.id"), nullable=False)
     name = Column(String(255), nullable=False)
-    hsn_code = Column(String(8), ForeignKey("hsn_master.code"), nullable=False)
+    hsn_sac = Column(String(12), nullable=False)
     quantity = Column(Float, nullable=False)
     unit_price = Column(Float, nullable=False)
     discount = Column(Float, default=0.0, nullable=False)
